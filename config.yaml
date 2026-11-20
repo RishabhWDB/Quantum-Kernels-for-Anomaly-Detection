@@ -1,0 +1,70 @@
+data_path: data/creditcard.csv
+cache_dir: cache
+results_dir: results
+figures_dir: figures
+cache_max_entries: 2000000
+
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+sampling:
+  n_train: 400
+  n_test: 400
+  fraud_fraction: 0.10
+  prevalence_normals: 20000
+
+cv_folds: 3
+edge_tolerance: 0.005
+bootstrap_resamples: 10000
+
+feature_map:
+  kind: zz
+  reps: 2
+  entanglement: linear
+
+grids:
+  qsvm:
+    C: [0.1, 1, 10, 100, 1000]
+    bandwidth: [0.01, 0.02, 0.05, 0.1, 0.25]
+  rbf_svm:
+    C: [0.1, 1, 10, 100, 1000]
+    gamma: [1.0e-4, 1.0e-3, 0.01, 0.1, 1]
+  isolation_forest:
+    n_estimators: [50, 100, 200, 300, 500]
+    max_samples: [0.05, 0.1, 0.25, 0.5, auto]
+  wide_C: [1.0e-3, 0.01, 0.1, 1, 10, 100, 1000, 1.0e4, 1.0e5]
+
+experiments:
+  pca_variance:
+    qubits: [2, 4, 6, 8, 10, 12]
+  resources:
+    qubits: [2, 4, 6, 8, 10, 12]
+    shots: 1000
+  main:
+    qubits: [4, 8]
+  qubits:
+    qubits: [2, 4, 6, 8]
+  bandwidth:
+    qubits: [4, 8]
+    bandwidths: [0.005, 0.01, 0.02, 0.05, 0.1, 0.25, 0.5, 0.75, 1.0]
+  concentration:
+    qubits: [2, 4, 6, 8, 10, 12]
+    bandwidths: [0.1, 0.25, 0.5, 1.0]
+  geometry:
+    qubits: [4, 8]
+    epsilon: 1.0e-3
+    heatmap_qubits: 8
+  feature_map:
+    qubits: [4, 8]
+    reps: [1, 2, 3]
+  learning_curve:
+    qubits: [4, 8]
+    train_sizes: [100, 200, 400, 800]
+  prevalence:
+    qubits: [4, 8]
+    recalls: [0.5, 0.8]
+  noise:
+    qubits: [4, 8]
+    unscaled_qubits: [8]
+    shots: [10, 100, 1000, 10000]
+    depolarizing: [0.0, 0.001, 0.005, 0.01, 0.02]
+    depolarizing_shots: 1000

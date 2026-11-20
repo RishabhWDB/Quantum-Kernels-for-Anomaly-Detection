@@ -225,35 +225,89 @@ The test sets have 40 frauds among 20,000 normal transactions; training is the s
 
 ```
 .
-├── README.md
+├── config.yaml            # every setting: seeds, sample sizes, grids, folds, noise levels
+├── requirements.txt
+├── qkfraud/
+│   ├── data.py            # CSV loading, disjoint stratified splits per seed (nested training pools)
+│   ├── features.py        # standardise → PCA to d → min–max to [0, π], fitted on train only
+│   ├── quantum.py         # ZZ / Z feature maps, exact fidelity kernels, Gram checks, disk cache, circuit resources
+│   ├── models.py          # equal-budget CV tuning (QSVM, RBF-SVM, Isolation Forest), grid-edge diagnostic
+│   ├── metrics.py         # PR-AUC, ROC-AUC, recall@FPR, P@k, best F1, MCC, operating points, PR curves
+│   ├── diagnostics.py     # concentration, centred KTA, effective rank, geometric difference, RBF correlation
+│   ├── noise.py           # finite-shot sampling, global depolarizing noise, PSD clipping
+│   ├── stats.py           # paired Wilcoxon, Holm correction, bootstrap CIs
+│   ├── experiments.py     # the eleven experiments behind every table and figure
+│   ├── report.py          # tables (results/report.md) and figures (figures/)
+│   └── __main__.py        # command-line entry point
+├── tests/                 # kernel, circuit, noise and statistics checks
 └── docs/
-    ├── Quantum_Kernels_Fraud_Detection.pptx   # 12-slide presentation (two speakers, with speaker notes)
+    ├── Quantum_Kernels_Fraud_Detection.pptx   # 13-slide presentation (two speakers, with speaker notes)
     └── figures/                               # figures from the project report used above
 ```
 
-**Presentation.** The deck is split evenly between two speakers. The title slide and the conclusion are shared.
+> The code was rebuilt from the project report after the original source was lost. It follows the report's method exactly (splits, preprocessing, grids, folds, metrics, statistics, noise models). The circuit resources it computes match Table II of the report exactly. The full study has not been re-run with this code, so the numbers in this README are the ones from the report.
+
+**Presentation.** The deck is split evenly between two speakers. The title slide is shared.
 
 | Slides | Speaker | Topic |
 |---|---|---|
 | 1 | Both | Title |
-| 2–6 | Speaker 1 | Problem, how a QSVM works, concentration vs bandwidth, pipeline, fair benchmark design |
-| 7–11 | Speaker 2 | Main result, bandwidth, RBF-like behaviour, realistic prevalence, noise and hardware cost |
-| 12 | Both | Conclusion, limitations, Q&A |
-
-> **Code status:** the experiment code, configuration and result files are not in this repository yet.
+| 2–7 | Speaker 1 | Problem, how a QSVM works, concentration vs bandwidth, pipeline, fair benchmark design, code structure |
+| 8–13 | Speaker 2 | Main result, bandwidth, RBF-like behaviour, realistic prevalence, noise and hardware cost, conclusion |
 
 ---
 
 ## Reproducing the study
 
-The study needs:
+**1. Install** (Python 3.10+):
 
-- **Python 3** with **Qiskit** (for statevector simulation and transpilation) and **scikit-learn** (for the SVMs, Isolation Forest, PCA and metrics)
-- **NumPy** and **SciPy** (for the statistics)
-- **Matplotlib** (for the figures)
-- The **ULB credit-card fraud data set** (`creditcard.csv`) from [Kaggle](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud)
+```bash
+pip install -r requirements.txt
+```
 
-The settings to reproduce are described under [Method](#method): the seeds, sample sizes, grids, folds and noise levels.
+**2. Get the data.** Download `creditcard.csv` from [Kaggle](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud) and put it in `data/`, or change `data_path` in `config.yaml`.
+
+**3. Run the experiments.** Run everything:
+
+```bash
+python -m qkfraud run all
+```
+
+Or run single experiments, optionally on fewer seeds:
+
+```bash
+python -m qkfraud run main prevalence --seeds 0 1 2
+```
+
+| Experiment | Produces |
+|---|---|
+| `pca_variance` | Table I: PCA variance retained |
+| `resources` | Table II: circuit depth and two-qubit gates, plus the hardware cost |
+| `main` | Tables IV–V, Fig. 3: main comparison at 10% fraud, grid-edge diagnostic |
+| `qubits` | Table VI: PR-AUC vs number of qubits |
+| `bandwidth` | Fig. 4, Fig. 9: bandwidth sweep with C tuned per λ, KTA vs PR-AUC |
+| `concentration` | Fig. 5: kernel variance and effective rank vs qubits |
+| `geometry` | Table IX, Fig. 6: KTA, RBF correlation, geometric difference, kernel heat maps |
+| `feature_map` | Table X: Z vs ZZ map for r = 1, 2, 3 |
+| `learning_curve` | Fig. 7: PR-AUC vs training-set size |
+| `prevalence` | Tables V and VII, Fig. 10: 0.2% fraud test sets |
+| `noise` | Table VIII, Fig. 8: finite-shot and depolarizing noise |
+
+Results go to `results/<experiment>.json`. Exact kernels are cached in `cache/`, keyed by the rows and parameters, so re-runs and overlapping experiments reuse them. The report says the full study took about 77 minutes on an Apple M1 CPU.
+
+**4. Build the tables and figures:**
+
+```bash
+python -m qkfraud report
+```
+
+This writes `results/report.md` and `figures/fig*.png`.
+
+**5. Run the tests:**
+
+```bash
+pytest tests
+```
 
 ---
 
