@@ -224,3 +224,4 @@ data/
 cache/
 results/
 figures/
+.DS_Store
